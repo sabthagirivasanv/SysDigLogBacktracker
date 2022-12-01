@@ -1,0 +1,7 @@
+digraph G {
+	a [label=MachineLearningErrors]
+	bc [label=RMSE]
+	c [label=MSC]
+	a -> b
+	a -> c
+}
