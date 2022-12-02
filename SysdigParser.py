@@ -4,7 +4,7 @@ import re
 
 
 def graphGenerator(nodes, edges):
-    g = Digraph('G', filename='hello.gv')
+    g = Digraph('G', filename='graph.gv')
 
     addFileNodes(g, nodes)
     addIPNodes(g, nodes)
@@ -55,11 +55,11 @@ def parseTextFile(fileName):
     for each in lineContents:
         # if line contents are not empty
         if len(each) > 0 and each[5] == '<':
-            print(each)
+            #print(each)
             # extracting information:
             finalProcessName = processSubjectName(each)
             operation = each[6]
-            obj = each[9].replace('fdName=', '')
+            obj = each[9].replace('fdName=', '').replace(":","_").replace("->", "=>")
             eventEndTime = int(each[1])
             latency = int(each[10].replace('latency=', ''))
             eventStartTime = eventEndTime - latency
@@ -70,7 +70,7 @@ def parseTextFile(fileName):
 
             ##Constructing Tuple
             eachEvent = (finalProcessName, obj, operation, eventStartTime, eventEndTime, latency)
-            print(eachEvent)
+            #print(eachEvent)
             tupleList.append(eachEvent)
 
             ##Node Addition:
