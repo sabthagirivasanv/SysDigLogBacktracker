@@ -4,7 +4,7 @@ import re
 
 
 def graphGenerator(nodes, edges):
-    g = Digraph('G', filename='graph.gv')
+    g = Digraph('G', filename='graph.gv', format='pdf')
 
     addFileNodes(g, nodes)
     addIPNodes(g, nodes)
