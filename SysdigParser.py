@@ -6,7 +6,7 @@ import re
 
 
 def graphVizGenerator(nodes, edges):
-    g = Digraph('G', filename='graph.gv', format='pdf')
+    g = Digraph('G', filename='graph.gv', format='svg')
 
     addFileNodes(g, nodes)
     addIPNodes(g, nodes)
