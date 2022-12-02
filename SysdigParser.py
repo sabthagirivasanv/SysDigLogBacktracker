@@ -71,7 +71,7 @@ def parseTextFile(fileName):
             # extracting information:
             finalProcessName = processSubjectName(each)
             operation = each[6]
-            obj = each[9].replace('fdName=', '').replace(":", "_").replace("->", "=>")
+            obj = each[9].replace('fdName=', '').replace(":", " port").replace("->", "=>")
             eventEndTime = int(each[1])
             latency = int(each[10].replace('latency=', ''))
             eventStartTime = eventEndTime - latency
