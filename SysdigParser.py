@@ -229,8 +229,6 @@ if __name__ == '__main__':
     if option == '2':
         u = input("Enter the source node\n")
         v = input("Enter the destination node\n")
-        # u = '/home/sabthagirivasan/script.py'
-        # v = '65056_python'
         print(u, v)
         allEdgesList = processBackTrackingBySourceDestination(allEdgesList, u, v)
 
