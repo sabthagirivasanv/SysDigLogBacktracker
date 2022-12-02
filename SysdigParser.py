@@ -1,5 +1,7 @@
 from graphviz import Digraph
 from datetime import datetime
+from collections import deque
+
 import re
 
 
@@ -47,7 +49,7 @@ def generateGraph(edgesList):
     nodes = set()
     edges = []
     for each in edgesList:
-        print("Each Edge:" + str(each))
+        #print("Each Edge:" + str(each))
         nodes.add((each['u'], each['uType']))
         nodes.add((each['v'], each['vType']))
         label = "[" + format_my_nanos(each['startTime']) + ", " + format_my_nanos(each['endTime']) + "]"
@@ -136,9 +138,35 @@ def extractLineContents(fileName):
     return linesList
 
 
-def generateBackTrackedGraph(allEdgesList, source, dist):
+def processBackTracking(reverseMapOfEdges, queue):
+    resultList = []
+    i = 0
+    while len(queue) > 0:
+        i = i+1
+        item = queue.popleft()
+        maxEndTime = item.get('maxEndTime')
+        node = item.get('node')
+
+        print(f"Back Track level : {i}")
+        if reverseMapOfEdges.get(node) is not None:
+            sourceNodes = reverseMapOfEdges.get(node)
+
+            for eachSourceNode in sourceNodes:
+                edges = sourceNodes.get(eachSourceNode)
+                if len(edges) > 0:
+                    filteredList = list(filter(lambda d: d['startTime'] < maxEndTime, edges))
+                    if len(filteredList) > 0:
+                        resultList.extend(filteredList)
+                        maxEndTimeForThisSource = getMaxEndTime(filteredList)
+                        maxEndTimeForThisSource = min(maxEndTimeForThisSource, maxEndTime)
+                        pushToQueue(queue, eachSourceNode, maxEndTimeForThisSource)
+
+    return resultList
+
+
+def processBackTrackingBySourceDestination(edgesList, source, dist):
     filteredEdges = []
-    reverseMapOfEdges = generateReverseMapOfEdges(allEdgesList)
+    reverseMapOfEdges = generateReverseMapOfEdges(edgesList)
 
     if reverseMapOfEdges.get(dist) is not None:
         entryNodes = reverseMapOfEdges.get(dist)
@@ -150,6 +178,11 @@ def generateBackTrackedGraph(allEdgesList, source, dist):
                 maxEndTime = getMaxEndTime(edges)
                 print(maxEndTime)
                 # insertIntoqueue:
+                queue = deque()
+                pushToQueue(queue, source, maxEndTime)
+
+                ##backtracking based on queue:
+                filteredEdges.extend(processBackTracking(reverseMapOfEdges, queue))
 
         else:
             print(f"Mentioned Source Node not found -> {source}")
@@ -160,6 +193,11 @@ def generateBackTrackedGraph(allEdgesList, source, dist):
     return filteredEdges
 
 
+def pushToQueue(queue, source, maxEndTime):
+    entry = dict(node=source, maxEndTime=maxEndTime)
+    queue.append(entry)
+
+
 def getMaxEndTime(edges):
     ##find max of all the new edges added:
     edges = sorted(edges, key=lambda e: e.get('endTime'), reverse=True)
@@ -168,9 +206,9 @@ def getMaxEndTime(edges):
     return maxEndTime
 
 
-def generateReverseMapOfEdges(allEdgesList):
+def generateReverseMapOfEdges(edgesList):
     reverseMapOfEdges = dict()
-    for each in allEdgesList:
+    for each in edgesList:
         u = each.get('u')
         v = each.get('v')
         entryNodes = reverseMapOfEdges.get(v, dict())
@@ -182,10 +220,18 @@ def generateReverseMapOfEdges(allEdgesList):
 
 
 if __name__ == '__main__':
-    #fileName = input("Enter the file name:\n")
-    allEdgesList = parseTextFile("sample.txt")
-    u = '1313_spice-vdagentd'
-    v = '/dev/uinput'
-    allEdgesList = generateBackTrackedGraph(allEdgesList, u, v)
-    print(allEdgesList)
+    fileName = input("Enter the file Name to be analysed:\n")
+    allEdgesList = parseTextFile(fileName)
+
+    option = input("Enter 1 for full graph\n"
+          "2 for backtracking")
+
+    if option == '2':
+        u = input("Enter the source node\n")
+        v = input("Enter the destination node\n")
+        # u = '/home/sabthagirivasan/script.py'
+        # v = '65056_python'
+        print(u, v)
+        allEdgesList = processBackTrackingBySourceDestination(allEdgesList, u, v)
+
     generateGraph(allEdgesList)
