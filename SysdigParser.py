@@ -95,6 +95,7 @@ def createEvent(eventEndTime, eventStartTime, fdType, finalProcessName, latency,
     eachEvent = dict(u=u, v=v, operation=operation,
                      startTime=eventStartTime, endTime=eventEndTime,
                      latency=latency, uType=uType, vType=vType)
+    print(f"Parsed Output: {str(eachEvent)}")
     return eachEvent
 
 
