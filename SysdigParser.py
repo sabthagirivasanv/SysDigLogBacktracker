@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 
 
-def graphGenerator(nodes, edges):
+def graphVizGenerator(nodes, edges):
     g = Digraph('G', filename='graph.gv', format='pdf')
 
     addFileNodes(g, nodes)
@@ -42,16 +42,26 @@ def addIPNodes(g, nodes):
         g.node(eachIP[0], eachIP[0])
 
 
+def generateGraph(edgesList):
+    ##Node Addition:
+    nodes = set()
+    edges = []
+    for each in edgesList:
+        print("Each Edge:" + str(each))
+        nodes.add((each['u'], each['uType']))
+        nodes.add((each['v'], each['vType']))
+        label = "[" + format_my_nanos(each['startTime']) + ", " + format_my_nanos(each['endTime']) + "]"
+        edges.append(dict(x=each['u'], y=each['v'], label=label))
+
+    graphVizGenerator(nodes, edges)
+
+
 def parseTextFile(fileName):
     lineContents = extractLineContents(fileName)
     i = 0
 
     # filter out exit events only:
-
-    tupleList = list()
-
-    nodes = set()
-    edges = list()
+    allEdgesList = list()
     for each in lineContents:
         # if line contents are not empty
         if len(each) > 0 and each[5] == '<':
@@ -59,37 +69,48 @@ def parseTextFile(fileName):
             # extracting information:
             finalProcessName = processSubjectName(each)
             operation = each[6]
-            obj = each[9].replace('fdName=', '').replace(":","_").replace("->", "=>")
+            obj = each[9].replace('fdName=', '').replace(":", "_").replace("->", "=>")
             eventEndTime = int(each[1])
             latency = int(each[10].replace('latency=', ''))
             eventStartTime = eventEndTime - latency
-            fdType = each[8].replace('fdtype=','')
+            fdType = each[8].replace('fdtype=', '')
 
             if len(obj) == 0:
                 continue
 
-            ##Constructing Tuple
-            eachEvent = (finalProcessName, obj, operation, eventStartTime, eventEndTime, latency)
-            #print(eachEvent)
-            tupleList.append(eachEvent)
-
-            ##Node Addition:
-            nodes.add((finalProcessName, "process"))
-            if fdType == 'ipv4' or fdType == 'ipv6':
-                nodes.add((obj, "ip"))
-            else:
-                nodes.add((obj, "file"))
-
-            ##edge creation:
-            label = format_my_nanos(eventEndTime)
-            if operation == 'read' or operation == 'readv' or operation == 'recvmsg' or operation == 'recvfrom':
-                edges.append(dict(x=obj, y=finalProcessName, label=label))
-            else:
-                edges.append(dict(x=finalProcessName, y=obj, label=label))
+            ##Constructing each edge data
+            ##edge creation
+            eachEvent = createEvent(eventEndTime, eventStartTime, fdType, finalProcessName, latency, obj, operation)
+            allEdgesList.append(eachEvent)
 
         i = i + 1
 
-    graphGenerator(nodes, edges)
+    return allEdgesList
+
+
+def createEvent(eventEndTime, eventStartTime, fdType, finalProcessName, latency, obj, operation):
+    u, uType, v, vType = findUandV(fdType, finalProcessName, obj, operation)
+    eachEvent = dict(u=u, v=v, operation=operation,
+                     startTime=eventStartTime, endTime=eventEndTime,
+                     latency=latency, uType=uType, vType=vType)
+    return eachEvent
+
+
+def findUandV(fdType, finalProcessName, obj, operation):
+    u = finalProcessName
+    v = obj
+    uType = 'process'
+    vType = 'file'
+    if fdType == 'ipv4' or fdType == 'ipv6':
+        vType = 'ip'
+    if operation == 'read' or operation == 'readv' or operation == 'recvmsg' or operation == 'recvfrom':
+        u = obj
+        v = finalProcessName
+
+        temp = uType
+        uType = vType
+        vType = temp
+    return u, uType, v, vType
 
 
 def format_my_nanos(nanos):
@@ -115,7 +136,56 @@ def extractLineContents(fileName):
     return linesList
 
 
+def generateBackTrackedGraph(allEdgesList, source, dist):
+    filteredEdges = []
+    reverseMapOfEdges = generateReverseMapOfEdges(allEdgesList)
+
+    if reverseMapOfEdges.get(dist) is not None:
+        entryNodes = reverseMapOfEdges.get(dist)
+        if entryNodes.get(source) is not None:
+            edges = entryNodes.get(source)
+
+            if len(edges) > 0:
+                filteredEdges.extend(edges)
+                maxEndTime = getMaxEndTime(edges)
+                print(maxEndTime)
+                # insertIntoqueue:
+
+        else:
+            print(f"Mentioned Source Node not found -> {source}")
+
+    else:
+        print(f"Mentioned Destination Node not found -> {dist}")
+
+    return filteredEdges
+
+
+def getMaxEndTime(edges):
+    ##find max of all the new edges added:
+    edges = sorted(edges, key=lambda e: e.get('endTime'), reverse=True)
+    maxEdge = edges[0]
+    maxEndTime = maxEdge.get('endTime')
+    return maxEndTime
+
+
+def generateReverseMapOfEdges(allEdgesList):
+    reverseMapOfEdges = dict()
+    for each in allEdgesList:
+        u = each.get('u')
+        v = each.get('v')
+        entryNodes = reverseMapOfEdges.get(v, dict())
+        edgesFromEachNode = entryNodes.get(u, [])
+        edgesFromEachNode.append(each)
+        entryNodes[u] = edgesFromEachNode
+        reverseMapOfEdges[v] = entryNodes
+    return reverseMapOfEdges
+
+
 if __name__ == '__main__':
-    # fileName = input("Enter the file name:\n")
-    parseTextFile("output1.txt")
-    # graphGenerator()
+    #fileName = input("Enter the file name:\n")
+    allEdgesList = parseTextFile("sample.txt")
+    u = '1313_spice-vdagentd'
+    v = '/dev/uinput'
+    allEdgesList = generateBackTrackedGraph(allEdgesList, u, v)
+    print(allEdgesList)
+    generateGraph(allEdgesList)
