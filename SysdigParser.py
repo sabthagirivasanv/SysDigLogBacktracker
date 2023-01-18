@@ -71,7 +71,7 @@ def parseTextFile(fileName):
             # extracting information:
             finalProcessName = processSubjectName(each)
             operation = each[6]
-            obj = each[9].replace('fdName=', '').replace(":", "_").replace("->", "=>")
+            obj = each[9].replace('fdName=', '').replace(":", " port ").replace("->", "=>")
             eventEndTime = int(each[1])
             latency = int(each[10].replace('latency=', ''))
             eventStartTime = eventEndTime - latency
@@ -95,6 +95,7 @@ def createEvent(eventEndTime, eventStartTime, fdType, finalProcessName, latency,
     eachEvent = dict(u=u, v=v, operation=operation,
                      startTime=eventStartTime, endTime=eventEndTime,
                      latency=latency, uType=uType, vType=vType)
+    print(f"Parsed Output: {str(eachEvent)}")
     return eachEvent
 
 
@@ -176,7 +177,7 @@ def processBackTrackingBySourceDestination(edgesList, source, dist):
             if len(edges) > 0:
                 filteredEdges.extend(edges)
                 maxEndTime = getMaxEndTime(edges)
-                print(maxEndTime)
+                #print(maxEndTime)
                 # insertIntoqueue:
                 queue = deque()
                 pushToQueue(queue, source, maxEndTime)
@@ -227,10 +228,8 @@ if __name__ == '__main__':
           "2 for backtracking")
 
     if option == '2':
-        u = input("Enter the source node\n")
-        v = input("Enter the destination node\n")
-        # u = '/home/sabthagirivasan/script.py'
-        # v = '65056_python'
+        u = input("\nEnter the source node\n")
+        v = input("\nEnter the destination node\n")
         print(u, v)
         allEdgesList = processBackTrackingBySourceDestination(allEdgesList, u, v)
 
