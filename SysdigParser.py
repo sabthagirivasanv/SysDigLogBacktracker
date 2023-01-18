@@ -177,7 +177,7 @@ def processBackTrackingBySourceDestination(edgesList, source, dist):
             if len(edges) > 0:
                 filteredEdges.extend(edges)
                 maxEndTime = getMaxEndTime(edges)
-                print(maxEndTime)
+                #print(maxEndTime)
                 # insertIntoqueue:
                 queue = deque()
                 pushToQueue(queue, source, maxEndTime)
@@ -228,8 +228,8 @@ if __name__ == '__main__':
           "2 for backtracking")
 
     if option == '2':
-        u = input("Enter the source node\n")
-        v = input("Enter the destination node\n")
+        u = input("\nEnter the source node\n")
+        v = input("\nEnter the destination node\n")
         print(u, v)
         allEdgesList = processBackTrackingBySourceDestination(allEdgesList, u, v)
 
